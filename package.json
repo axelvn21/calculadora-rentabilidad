@@ -1,0 +1,14 @@
+{
+  "name": "calculadora-rentabilidad",
+  "version": "1.0.0",
+  "description": "Calculadora de rentabilidad para conductores",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Static files ready'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}

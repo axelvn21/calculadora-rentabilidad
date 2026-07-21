@@ -1,0 +1,14 @@
+{
+  "appId": "com.axelvn.calculadora",
+  "appName": "Calculadora Rentabilidad",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "url": "https://calculadora-rentabilidad.onrender.com",
+    "cleartext": false,
+    "allowNavigation": ["*"]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
