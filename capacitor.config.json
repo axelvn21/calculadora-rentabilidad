@@ -7,5 +7,12 @@
   },
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0f0f1a",
+      "overlaysWebView": true
+    }
   }
 }
