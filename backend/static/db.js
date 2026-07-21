@@ -49,7 +49,7 @@ function clearStore(store) {
     return tx(store, 'readwrite').then(s => new Promise((res, rej) => { const r = s.clear(); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }));
 }
 
-function searchCatalog(query) {
+function searchCatalogDB(query) {
     return getAll('catalog').then(items => {
         if (!query) return items;
         const q = query.toLowerCase();
@@ -140,7 +140,8 @@ async function seedData() {
 async function offlineApi(path, options = {}) {
     await seedData();
     const method = (options.method || 'GET').toUpperCase();
-    const parts = path.replace(/^\//, '').split('/');
+    const cleanPath = path.split('?')[0];
+    const parts = cleanPath.replace(/^\//, '').split('/');
     const resource = parts[0];
 
     if (resource === 'vehicles') {
@@ -176,7 +177,7 @@ async function offlineApi(path, options = {}) {
     if (resource === 'vehicle-catalog') {
         const url = new URL('https://x' + path);
         const search = url.searchParams.get('search') || '';
-        return await searchCatalog(search);
+        return await searchCatalogDB(search);
     }
 
     if (resource === 'sessions') {
