@@ -87,14 +87,14 @@
             #page-trips .grid-cols-2 { grid-template-columns: 1fr !important; }
             #dashboard-stats { grid-template-columns: 1fr 1fr !important; }
             #dashboard-details { grid-template-columns: 1fr !important; }
-            #vehicle-form, #session-form { grid-template-columns: 1fr 1fr !important; }
+            #vehicle-form, #session-form { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 480px) {
             .home-widgets { grid-template-columns: 1fr; gap: 10px; }
             .calc-logic-grid { grid-template-columns: 1fr !important; }
             .page { padding: 12px 10px !important; }
             #dashboard-stats { grid-template-columns: 1fr !important; }
-            #vehicle-form, #session-form { grid-template-columns: 1fr !important; }
+            .card { padding: 16px !important; }
         }
         .tooltip-trigger { position: relative; cursor: help; }
         .tooltip-trigger .tooltip-content {
@@ -403,7 +403,7 @@
                     </div>
                     <div>
                         <label class="label">Fecha</label>
-                        <input name="date" id="session-date-input" type="date" class="input-field" required>
+                        <input name="date" id="session-date-input" type="text" class="input-field" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}" required>
                     </div>
                     <div><label class="label">Horas trabajadas</label><input name="hours_worked" type="number" step="0.5" class="input-field" value="6" required></div>
                     <div>
@@ -435,11 +435,11 @@
                         <button type="button" class="btn-secondary" onclick="resetSessionForm()">Cancelar</button>
                     </div>
                     <div class="col-span-4">
-                        <div id="session-commission-preview" class="bg-dark-700 rounded-xl p-3 flex items-center gap-3">
-                            <i class="fas fa-percent text-accent-400"></i>
-                            <span class="text-gray-400 text-sm">Comisión estimada:</span>
-                            <span class="font-semibold text-red-400" id="session-commission-value">-$5.91</span>
-                            <span class="text-gray-600 text-xs" id="session-commission-detail">(13.79% × $43.20 = $5.91)</span>
+                        <div id="session-commission-preview" class="bg-dark-700 rounded-xl p-3 flex flex-wrap items-center gap-2 overflow-hidden max-w-full">
+                            <i class="fas fa-percent text-accent-400 flex-shrink-0"></i>
+                            <span class="text-gray-400 text-sm flex-shrink-0">Comisión estimada:</span>
+                            <span class="font-semibold text-red-400 flex-shrink-0" id="session-commission-value">-$5.91</span>
+                            <span class="text-gray-600 text-[11px] w-full text-right truncate" id="session-commission-detail">(13.79% × $43.20 = $5.91)</span>
                         </div>
                     </div>
                 </form>
@@ -1202,7 +1202,13 @@
         const y = now.getFullYear();
         const m = String(now.getMonth() + 1).padStart(2, '0');
         const d = String(now.getDate()).padStart(2, '0');
-        document.getElementById('session-date-input').value = `${y}-${m}-${d}`;
+        document.getElementById('session-date-input').value = `${d}/${m}/${y}`;
+    }
+
+    function parseDisplayDate(displayDate) {
+        const parts = displayDate.split('/');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return displayDate;
     }
 
     function formatDisplayDate(isoDate) {
@@ -1249,7 +1255,7 @@
         form.setAttribute('data-editing-id', id);
         form.vehicle_id.value = s.vehicle_id;
         form.platform.value = s.platform;
-        document.getElementById('session-date-input').value = s.date;
+        document.getElementById('session-date-input').value = formatDisplayDate(s.date);
         form.hours_worked.value = s.hours_worked;
         form.km_driven.value = s.km_driven || '';
         form.total_trips.value = s.total_trips || '';
@@ -1265,6 +1271,7 @@
         e.preventDefault();
         const fd = new FormData(e.target);
         const data = Object.fromEntries(fd);
+        data.date = parseDisplayDate(data.date);
         data.vehicle_id = parseInt(data.vehicle_id);
         data.hours_worked = parseFloat(data.hours_worked) || 0;
         data.km_driven = parseFloat(data.km_driven) || 0;
