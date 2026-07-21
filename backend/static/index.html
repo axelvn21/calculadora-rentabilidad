@@ -74,11 +74,10 @@
         .mini-grid .mini-val { font-size: 0.875rem; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         @media (max-width: 1100px) { .home-widgets { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 768px) {
-            .hamburger { display: flex; }
-            aside { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 150; }
-            aside.sidebar-open { transform: translateX(0); }
-            .sidebar-overlay.active { display: block; }
-            main { margin-left: 0 !important; padding-top: calc(72px + env(safe-area-inset-top)) !important; }
+            .hamburger { display: none !important; }
+            aside { display: none !important; }
+            .sidebar-overlay { display: none !important; }
+            main { margin-left: 0 !important; padding-top: 16px !important; padding-bottom: 80px !important; }
             .home-cta { height: 40px; padding: 0 14px; font-size: 12px; }
             .home-widgets { grid-template-columns: 1fr; gap: 12px; }
             .calc-logic-grid { grid-template-columns: 1fr 1fr !important; }
@@ -119,6 +118,28 @@
         .badge-orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
         .badge-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
         .badge-yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+        .bottom-nav { display: none; }
+        @media (max-width: 768px) {
+            .bottom-nav {
+                display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+                background: #1a1a2e; border-top: 1px solid #2d2d4a;
+                padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+                z-index: 200; justify-content: space-around; align-items: center;
+            }
+            .bottom-nav-item {
+                display: flex; flex-direction: column; align-items: center; gap: 2px;
+                background: none; border: none; color: #64748b; font-size: 10px;
+                cursor: pointer; padding: 4px 8px; transition: color 0.2s; min-width: 0;
+            }
+            .bottom-nav-item i { font-size: 18px; }
+            .bottom-nav-item.active { color: #6c63ff; }
+            .bottom-nav-item:active { transform: scale(0.9); }
+            .home-header-row { flex-direction: column !important; gap: 10px !important; }
+            .home-header-btns { width: 100%; justify-content: stretch; }
+            .home-header-btns .home-cta { flex: 1; }
+            .home-analizar-row { width: 100%; }
+            .home-analizar-row .home-cta { width: 100%; height: 42px; }
+        }
     </style>
 </head>
 <body class="flex">
@@ -172,19 +193,21 @@
         <!-- HOME -->
         <div id="page-home" class="page p-8">
             <!-- Header + CTAs -->
-            <div class="flex justify-between items-start mb-8">
+            <div class="flex justify-between items-start mb-4 home-header-row">
                 <div>
                     <h2 class="text-2xl font-bold text-white" id="home-greeting">¡Buenas! Bienvenido</h2>
                     <p class="text-gray-500 text-sm mt-1">Calcula cuánto ganas realmente como conductor</p>
                 </div>
-                <div class="flex gap-3 flex-shrink-0">
+                <div class="flex gap-3 flex-shrink-0 home-header-btns">
                     <button onclick="showPage('sessions'); setTimeout(()=>toggleSessionForm(),100)" class="btn-primary home-cta">
                         <i class="fas fa-plus mr-2"></i>Nueva Jornada
                     </button>
-                    <button onclick="showPage('trips')" class="btn-secondary home-cta">
-                        <i class="fas fa-bolt mr-2 text-yellow-400"></i>Analizar Viaje
-                    </button>
                 </div>
+            </div>
+            <div class="mb-6 home-analizar-row">
+                <button onclick="showPage('trips')" class="btn-secondary home-cta">
+                    <i class="fas fa-bolt mr-2 text-yellow-400"></i>Analizar Viaje
+                </button>
             </div>
 
             <!-- Widgets de Resumen -->
@@ -584,6 +607,30 @@
 
     </main>
 
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button onclick="showPage('home')" class="bottom-nav-item active" data-page="home">
+            <i class="fas fa-home"></i>
+            <span>Inicio</span>
+        </button>
+        <button onclick="showPage('vehicles')" class="bottom-nav-item" data-page="vehicles">
+            <i class="fas fa-car"></i>
+            <span>Vehículos</span>
+        </button>
+        <button onclick="showPage('sessions')" class="bottom-nav-item" data-page="sessions">
+            <i class="fas fa-clock"></i>
+            <span>Jornadas</span>
+        </button>
+        <button onclick="showPage('trips')" class="bottom-nav-item" data-page="trips">
+            <i class="fas fa-bolt"></i>
+            <span>Viajes</span>
+        </button>
+        <button onclick="showPage('dashboard')" class="bottom-nav-item" data-page="dashboard">
+            <i class="fas fa-chart-line"></i>
+            <span>Dashboard</span>
+        </button>
+    </nav>
+
     <!-- MODAL -->
     <div id="app-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
         <div class="modal-content">
@@ -609,7 +656,11 @@
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
         document.getElementById('page-' + page).classList.remove('hidden');
         document.querySelectorAll('.sidebar-item').forEach(n => n.classList.remove('active'));
-        document.querySelector(`[data-page="${page}"]`).classList.add('active');
+        const sideBtn = document.querySelector(`.sidebar-item[data-page="${page}"]`);
+        if (sideBtn) sideBtn.classList.add('active');
+        document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
+        const bottomBtn = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
+        if (bottomBtn) bottomBtn.classList.add('active');
         if (window.innerWidth <= 768) {
             document.querySelector('aside').classList.remove('sidebar-open');
             document.getElementById('sidebar-overlay').classList.remove('active');
