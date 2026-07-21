@@ -4,7 +4,7 @@
   "webDir": "www",
   "server": {
     "androidScheme": "https",
-    "url": "https://calculadora-rentabilidad.onrender.com",
+    "url": "https://calculadora-rentabilidad-r7f6.onrender.com",
     "cleartext": false,
     "allowNavigation": ["*"]
   },
