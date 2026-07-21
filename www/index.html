@@ -390,7 +390,7 @@
                 <h3 class="font-semibold text-white mb-4">
                     <i class="fas fa-clock mr-2 text-accent-400"></i>Registrar Jornada
                 </h3>
-                <form id="session-form" class="grid grid-cols-4 gap-4" onsubmit="createSession(event)">
+                <form id="session-form" class="grid grid-cols-3 gap-4" onsubmit="createSession(event)">
                     <div><label class="label">Vehículo</label><select name="vehicle_id" id="session-vehicle-select" class="input-field" required></select></div>
                     <div>
                         <label class="label">Plataforma</label>
@@ -434,12 +434,12 @@
                         <button type="submit" class="btn-primary w-full" id="session-submit-btn">Guardar</button>
                         <button type="button" class="btn-secondary" onclick="resetSessionForm()">Cancelar</button>
                     </div>
-                    <div class="col-span-4">
-                        <div id="session-commission-preview" class="bg-dark-700 rounded-xl p-3 flex flex-wrap items-center gap-2 overflow-hidden max-w-full">
+                    <div class="col-span-3">
+                        <div id="session-commission-preview" class="bg-dark-700 rounded-xl p-3 flex flex-wrap items-center gap-2 max-w-full">
                             <i class="fas fa-percent text-accent-400 flex-shrink-0"></i>
                             <span class="text-gray-400 text-sm flex-shrink-0">Comisión estimada:</span>
                             <span class="font-semibold text-red-400 flex-shrink-0" id="session-commission-value">-$5.91</span>
-                            <span class="text-gray-600 text-[11px] w-full text-right truncate" id="session-commission-detail">(13.79% × $43.20 = $5.91)</span>
+                            <span class="text-gray-600 text-xs w-full text-right" id="session-commission-detail">(13.79% × $43.20 = $5.91)</span>
                         </div>
                     </div>
                 </form>
