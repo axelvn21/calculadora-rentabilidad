@@ -3,10 +3,7 @@
   "appName": "Calculadora Rentabilidad",
   "webDir": "www",
   "server": {
-    "androidScheme": "https",
-    "url": "https://calculadora-rentabilidad-r7f6.onrender.com",
-    "cleartext": false,
-    "allowNavigation": ["*"]
+    "androidScheme": "https"
   },
   "android": {
     "allowMixedContent": false

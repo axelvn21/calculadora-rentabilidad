@@ -2,20 +2,1727 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calculadora de Rentabilidad</title>
+    <meta name="description" content="Calcula cuánto ganas realmente como conductor">
+    <meta name="theme-color" content="#6c63ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Calculadora">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="db.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0f0f1a', 800: '#1a1a2e', 700: '#252540', 600: '#2d2d4a' },
+                        accent: { 400: '#6c63ff', 500: '#5a52d5', 600: '#4840b0' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { background: #0f0f1a; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: system-ui, sans-serif; }
-        .loader { text-align: center; }
-        .spinner { width: 40px; height: 40px; border: 3px solid #2d2d4a; border-top-color: #6c63ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        p { color: #94a3b8; font-size: 14px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { background: #0f0f1a; color: #e2e8f0; width: 100%; height: 100vh; height: 100dvh; margin: 0; padding: 0; overflow: hidden; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .sidebar-item { transition: all 0.2s ease; border-left: 3px solid transparent; }
+        .sidebar-item:hover { background: rgba(108, 99, 255, 0.1); }
+        .sidebar-item.active { background: rgba(108, 99, 255, 0.15); border-left-color: #6c63ff; color: #fff; }
+        .card { background: #1a1a2e; border: 1px solid #2d2d4a; border-radius: 16px; padding: 24px; transition: all 0.2s ease; overflow: hidden; }
+        .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .card-interactive:hover { transform: translateY(-2px); cursor: pointer; }
+        .input-field { width: 100%; padding: 12px 16px; background: #252540; border: 1px solid #2d2d4a; border-radius: 12px; font-size: 14px; color: #e2e8f0; transition: all 0.2s; }
+        .input-field:focus { outline: none; border-color: #6c63ff; box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2); }
+        .input-field option { background: #1a1a2e; color: #e2e8f0; }
+        .label { display: block; font-size: 13px; font-weight: 500; color: #94a3b8; margin-bottom: 6px; }
+        .btn-primary { background: #6c63ff; color: white; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .btn-primary:hover { background: #5a52d5; transform: translateY(-1px); }
+        .btn-secondary { background: #252540; color: #94a3b8; padding: 12px 24px; border-radius: 12px; border: 1px solid #2d2d4a; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s; }
+        .btn-secondary:hover { background: #2d2d4a; color: #e2e8f0; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        .stat-glow { box-shadow: 0 0 20px rgba(108, 99, 255, 0.1); }
+        .stat-card { cursor: pointer; position: relative; transition: all 0.25s ease; }
+        .stat-card:hover { border-color: #6c63ff !important; box-shadow: 0 0 20px rgba(108, 99, 255, 0.25); transform: translateY(-2px); }
+        .stat-card .stat-arrow { opacity: 0; transition: opacity 0.2s; }
+        .stat-card:hover .stat-arrow { opacity: 1; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content { background: #1a1a2e; border: 1px solid #2d2d4a; border-radius: 16px; padding: 28px; max-width: 720px; width: 90%; max-height: 80vh; overflow-y: auto; transform: translateY(20px); transition: transform 0.25s; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-bar { display: flex; align-items: center; gap: 8px; height: 100%; border-radius: 4px 4px 0 0; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: #6c63ff; border-radius: 3px; }
+        .hidden { display: none !important; }
+        .active-filter { background: #6c63ff !important; color: white !important; border-color: #6c63ff !important; }
+        .page { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .profit-positive { color: #22c55e; font-weight: bold; }
+        .profit-negative { color: #ef4444; font-weight: bold; }
+        .home-widgets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .home-cta { white-space: nowrap; height: 44px; display: inline-flex; align-items: center; padding: 0 20px; }
+        .home-cta i { flex-shrink: 0; }
+        .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .mini-grid > div { min-width: 0; overflow: hidden; }
+        .mini-grid .mini-val { font-size: 0.875rem; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        @media (max-width: 1100px) { .home-widgets { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            aside { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 150; }
+            aside.sidebar-open { transform: translateX(0); }
+            .sidebar-overlay.active { display: block; }
+            main { margin-left: 0 !important; padding-top: 72px !important; }
+            .home-cta { height: 40px; padding: 0 14px; font-size: 12px; }
+            .home-widgets { grid-template-columns: 1fr; gap: 12px; }
+            .calc-logic-grid { grid-template-columns: 1fr 1fr !important; }
+            .contact-grid { grid-template-columns: 1fr !important; }
+            .page { padding: 16px 12px !important; }
+            #page-sessions .grid-cols-3 { grid-template-columns: 1fr !important; }
+            #page-trips .grid-cols-2 { grid-template-columns: 1fr !important; }
+            #dashboard-stats { grid-template-columns: 1fr 1fr !important; }
+            #dashboard-details { grid-template-columns: 1fr !important; }
+            #vehicle-form, #session-form { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 480px) {
+            .home-widgets { grid-template-columns: 1fr; gap: 10px; }
+            .calc-logic-grid { grid-template-columns: 1fr !important; }
+            .page { padding: 12px 10px !important; }
+            #dashboard-stats { grid-template-columns: 1fr !important; }
+            #vehicle-form, #session-form { grid-template-columns: 1fr !important; }
+        }
+        .tooltip-trigger { position: relative; cursor: help; }
+        .tooltip-trigger .tooltip-content {
+            display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: #252540; border: 1px solid #2d2d4a; border-radius: 10px; padding: 10px 14px;
+            font-size: 12px; color: #94a3b8; width: 260px; z-index: 50; margin-bottom: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4); line-height: 1.5;
+        }
+        .tooltip-trigger:hover .tooltip-content { display: block; }
+        .tooltip-trigger .tooltip-content::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 6px solid transparent; border-top-color: #2d2d4a;
+        }
+        .hamburger { display: none; position: fixed; top: 16px; left: 16px; z-index: 200; width: 44px; height: 44px; background: #1a1a2e; border: 1px solid #2d2d4a; border-radius: 12px; cursor: pointer; align-items: center; justify-content: center; }
+        .hamburger i { color: #6c63ff; font-size: 18px; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 149; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-green { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+        .badge-blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .badge-purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+        .badge-orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .badge-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .badge-yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
     </style>
 </head>
-<body>
-    <div class="loader">
-        <div class="spinner"></div>
-        <p>Cargando...</p>
+<body class="flex">
+
+    <button class="hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-dark-800 border-r border-dark-600 flex flex-col fixed h-full">
+        <div class="p-5 border-b border-dark-600">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-accent-400 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-calculator text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-sm">Calculadora</h1>
+                    <p class="text-xs text-gray-500">de Rentabilidad</p>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 py-4">
+            <button onclick="showPage('home')" class="sidebar-item active w-full flex items-center gap-3 px-5 py-3 text-sm text-gray-400 transition-all" data-page="home">
+                <i class="fas fa-home w-5 text-center"></i>
+                <span>Inicio</span>
+            </button>
+            <button onclick="showPage('vehicles')" class="sidebar-item w-full flex items-center gap-3 px-5 py-3 text-sm text-gray-400 transition-all" data-page="vehicles">
+                <i class="fas fa-car w-5 text-center"></i>
+                <span>Vehículos</span>
+            </button>
+            <button onclick="showPage('sessions')" class="sidebar-item w-full flex items-center gap-3 px-5 py-3 text-sm text-gray-400 transition-all" data-page="sessions">
+                <i class="fas fa-clock w-5 text-center"></i>
+                <span>Jornadas</span>
+            </button>
+            <button onclick="showPage('trips')" class="sidebar-item w-full flex items-center gap-3 px-5 py-3 text-sm text-gray-400 transition-all" data-page="trips">
+                <i class="fas fa-route w-5 text-center"></i>
+                <span>Viajes</span>
+            </button>
+            <button onclick="showPage('dashboard')" class="sidebar-item w-full flex items-center gap-3 px-5 py-3 text-sm text-gray-400 transition-all" data-page="dashboard">
+                <i class="fas fa-chart-line w-5 text-center"></i>
+                <span>Dashboard</span>
+            </button>
+        </nav>
+        <div class="p-4 border-t border-dark-600">
+            <p class="text-[11px] text-gray-600 text-center">v1.0 · Ecuador 2026</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 flex-1 min-h-screen overflow-y-auto overflow-x-hidden" style="overscroll-behavior-y: contain;">
+
+        <!-- HOME -->
+        <div id="page-home" class="page p-8">
+            <!-- Header + CTAs -->
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-white" id="home-greeting">¡Buenas! Bienvenido</h2>
+                    <p class="text-gray-500 text-sm mt-1">Calcula cuánto ganas realmente como conductor</p>
+                </div>
+                <div class="flex gap-3 flex-shrink-0">
+                    <button onclick="showPage('sessions'); setTimeout(()=>toggleSessionForm(),100)" class="btn-primary home-cta">
+                        <i class="fas fa-plus mr-2"></i>Nueva Jornada
+                    </button>
+                    <button onclick="showPage('trips')" class="btn-secondary home-cta">
+                        <i class="fas fa-bolt mr-2 text-yellow-400"></i>Analizar Viaje
+                    </button>
+                </div>
+            </div>
+
+            <!-- Widgets de Resumen -->
+            <div id="home-widgets" class="home-widgets mb-8"></div>
+
+            <!-- Lógica de Cálculo Activa -->
+            <div class="card">
+                <h3 class="font-semibold text-white mb-4"><i class="fas fa-cog mr-2 text-accent-400"></i>Lógica de Cálculo Activa</h3>
+                <div class="grid grid-cols-4 gap-4 calc-logic-grid">
+                    <div class="bg-dark-700 rounded-xl p-4 text-center stat-card" onclick="showCalcLogicModal('comisiones')" style="cursor:pointer">
+                        <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-3 relative">
+                            <i class="fas fa-percentage text-blue-400"></i>
+                            <i class="fas fa-arrow-right-right text-gray-600 text-[9px] absolute -top-1 -right-1"></i>
+                        </div>
+                        <p class="font-semibold text-white text-sm">Comisiones</p>
+                        <p class="text-gray-500 text-xs mt-1" id="home-commissions">InDrive 13.79% · Uber 25%</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-4 text-center stat-card" onclick="showCalcLogicModal('combustible')" style="cursor:pointer">
+                        <div class="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center mx-auto mb-3 relative">
+                            <i class="fas fa-gas-pump text-yellow-400"></i>
+                            <i class="fas fa-arrow-right text-gray-600 text-[9px] absolute -top-1 -right-1"></i>
+                        </div>
+                        <p class="font-semibold text-white text-sm">Combustible</p>
+                        <p class="text-gray-500 text-xs mt-1" id="home-fuel">Extra $3.26/gal</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-4 text-center stat-card" onclick="showCalcLogicModal('mantenimiento')" style="cursor:pointer">
+                        <div class="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-3 relative">
+                            <i class="fas fa-wrench text-purple-400"></i>
+                            <i class="fas fa-arrow-right text-gray-600 text-[9px] absolute -top-1 -right-1"></i>
+                        </div>
+                        <p class="font-semibold text-white text-sm">Mantenimiento</p>
+                        <p class="text-gray-500 text-xs mt-1" id="home-maintenance">$0.05/km promedio</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-4 text-center stat-card" onclick="showCalcLogicModal('ganancia')" style="cursor:pointer">
+                        <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-3 relative">
+                            <i class="fas fa-hand-holding-dollar text-green-400"></i>
+                            <i class="fas fa-arrow-right text-gray-600 text-[9px] absolute -top-1 -right-1"></i>
+                        </div>
+                        <p class="font-semibold text-white text-sm">Ganancia Real</p>
+                        <p class="text-gray-500 text-xs mt-1" id="home-margin">Ingreso - Gastos operativos</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacto / Redes -->
+            <div class="card mt-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-accent-400/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-heart text-accent-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-white text-sm">¿Te sirvió la app?</h3>
+                        <p class="text-gray-500 text-xs">Sígueme o recomiéndame, ¡cualquier feedback es bienvenido!</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 contact-grid">
+                    <a href="https://www.tiktok.com/@axelvn21" target="_blank" class="bg-dark-700 hover:bg-dark-600 rounded-xl p-3 flex items-center gap-3 transition-colors group">
+                        <div class="w-9 h-9 bg-pink-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fab fa-tiktok text-pink-400 text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-gray-500 text-[10px]">TikTok</p>
+                            <p class="text-white text-xs font-semibold truncate group-hover:text-pink-400 transition-colors">@axelvn21</p>
+                        </div>
+                    </a>
+                    <a href="https://www.instagram.com/axelvn21" target="_blank" class="bg-dark-700 hover:bg-dark-600 rounded-xl p-3 flex items-center gap-3 transition-colors group">
+                        <div class="w-9 h-9 bg-purple-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fab fa-instagram text-purple-400 text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-gray-500 text-[10px]">Instagram</p>
+                            <p class="text-white text-xs font-semibold truncate group-hover:text-purple-400 transition-colors">@axelvn21</p>
+                        </div>
+                    </a>
+                    <a href="https://wa.me/593963695195" target="_blank" class="bg-dark-700 hover:bg-dark-600 rounded-xl p-3 flex items-center gap-3 transition-colors group">
+                        <div class="w-9 h-9 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fab fa-whatsapp text-green-400 text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-gray-500 text-[10px]">WhatsApp</p>
+                            <p class="text-white text-xs font-semibold truncate group-hover:text-green-400 transition-colors">096 369 5195</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div id="page-vehicles" class="page hidden p-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Mis Vehículos</h2>
+                    <p class="text-gray-500 text-sm mt-1">Gestiona tus vehículos registrados</p>
+                </div>
+                <button onclick="toggleVehicleForm()" class="btn-primary" id="btn-toggle-vehicle">
+                    <i class="fas fa-plus mr-2"></i>Nuevo Vehículo
+                </button>
+            </div>
+
+            <div id="vehicle-form-container" class="card hidden mb-6">
+                <h3 class="font-semibold text-white mb-4">
+                    <i class="fas fa-car mr-2 text-accent-400"></i>Registrar Vehículo
+                </h3>
+                <div class="mb-4">
+                    <label class="label">Buscar en catálogo</label>
+                    <div class="relative">
+                        <input type="text" id="catalog-search" class="input-field" placeholder="Escribe marca o modelo (ej: Spark, Atos, Morning...)" oninput="searchCatalog(this.value)" autocomplete="off">
+                        <div id="catalog-results" class="absolute z-50 w-full bg-dark-700 border border-dark-600 rounded-xl mt-1 max-h-60 overflow-y-auto hidden"></div>
+                    </div>
+                </div>
+                <form id="vehicle-form" class="grid grid-cols-4 gap-4" onsubmit="createVehicle(event)">
+                    <div><label class="label">Marca</label><input name="brand" class="input-field" value="Chevrolet" required></div>
+                    <div><label class="label">Modelo</label><input name="model" class="input-field" value="Spark" required></div>
+                    <div><label class="label">Año</label><input name="year" type="number" class="input-field" value="2005" required></div>
+                    <div>
+                        <label class="label">Combustible</label>
+                        <select name="fuel_type" id="vehicle-fuel-type" class="input-field" onchange="onFuelTypeChange(this.value)">
+                            <option value="">Seleccionar...</option>
+                            <option value="Extra / Ecopaís">Extra / Ecopaís ($3.26/gal)</option>
+                            <option value="Súper Premium 95">Súper Premium 95 ($5.61/gal)</option>
+                            <option value="Diésel Premium">Diésel Premium ($3.20/gal)</option>
+                            <option value="Gas GLP">Gas GLP ($1.33/gal)</option>
+                            <option value="Eléctrico">Eléctrico ($0.10/kWh)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label flex items-center gap-2">
+                            Rendimiento (km/galón)
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-question-circle text-gray-600 text-xs"></i>
+                                <span class="tooltip-content">
+                                    <b>Promedio en ciudad:</b><br>
+                                    Autos económicos (Spark, Picanto, Grand i10): <b>35-45 km/gal</b><br>
+                                    Sedanes medianos (Corolla, Sentra): <b>28-35 km/gal</b><br>
+                                    SUVs compactos: <b>22-28 km/gal</b><br><br>
+                                    <i>En carretera suele ser 10-15% mejor.</i>
+                                </span>
+                            </span>
+                        </label>
+                        <input name="consumption_km_per_gallon" id="vehicle-consumption" type="number" step="0.1" class="input-field" value="40" required>
+                    </div>
+                    <div>
+                        <label class="label">Precio combustible ($/galón)</label>
+                        <input name="fuel_price_per_gallon" id="vehicle-fuel-price" type="number" step="0.01" class="input-field" value="3.26" required>
+                    </div>
+                    <div>
+                        <label class="label flex items-center gap-2">
+                            Costo mantenimiento ($/km)
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-question-circle text-gray-600 text-xs"></i>
+                                <span class="tooltip-content">
+                                    <b>Incluye:</b> Desgaste de llantas, cambios de aceite (cada 5.000-10.000 km), frenos, suspensión y matriculación/RTV.<br><br>
+                                    <b>Promedio Ecuador:</b><br>
+                                    Autos económicos: <b>$0.03-0.04/km</b><br>
+                                    Sedanes: <b>$0.04-0.06/km</b><br>
+                                    SUVs: <b>$0.06-0.10/km</b>
+                                </span>
+                            </span>
+                        </label>
+                        <input name="maintenance_cost_per_km" id="vehicle-maintenance" type="number" step="0.01" class="input-field" value="0.05">
+                    </div>
+                    <div class="flex items-end"><button type="submit" class="btn-primary w-full">Guardar</button></div>
+                </form>
+            </div>
+
+            <div id="vehicles-list" class="grid grid-cols-2 gap-5"></div>
+        </div>
+
+        <!-- SESSIONS -->
+        <div id="page-sessions" class="page hidden p-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Jornadas de Trabajo</h2>
+                    <p class="text-gray-500 text-sm mt-1">Registra y analiza tus jornadas</p>
+                </div>
+                <button onclick="toggleSessionForm()" class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Nueva Jornada
+                </button>
+            </div>
+
+            <div id="session-form-container" class="card hidden mb-6">
+                <h3 class="font-semibold text-white mb-4">
+                    <i class="fas fa-clock mr-2 text-accent-400"></i>Registrar Jornada
+                </h3>
+                <form id="session-form" class="grid grid-cols-4 gap-4" onsubmit="createSession(event)">
+                    <div><label class="label">Vehículo</label><select name="vehicle_id" id="session-vehicle-select" class="input-field" required></select></div>
+                    <div>
+                        <label class="label">Plataforma</label>
+                        <select name="platform" id="session-platform-select" class="input-field" onchange="updateSessionCommissionPreview()">
+                            <option value="InDrive">InDrive</option>
+                            <option value="Uber">Uber</option>
+                            <option value="Taxi">Taxi</option>
+                            <option value="Didi">Didi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Fecha</label>
+                        <input name="date" id="session-date-input" type="date" class="input-field" required>
+                    </div>
+                    <div><label class="label">Horas trabajadas</label><input name="hours_worked" type="number" step="0.5" class="input-field" value="6" required></div>
+                    <div>
+                        <label class="label flex items-center gap-2">
+                            Kilómetros
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-question-circle text-gray-600 text-xs"></i>
+                                <span class="tooltip-content">Opcional. Si no lo sabes, déjalo en 0 y la app calculará con lo que tengas.</span>
+                            </span>
+                        </label>
+                        <input name="km_driven" type="number" class="input-field" value="80">
+                    </div>
+                    <div>
+                        <label class="label flex items-center gap-2">
+                            Viajes
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-question-circle text-gray-600 text-xs"></i>
+                                <span class="tooltip-content">Opcional. Si no los recuerdas, déjalo en 0.</span>
+                            </span>
+                        </label>
+                        <input name="total_trips" type="number" class="input-field" value="14">
+                    </div>
+                    <div>
+                        <label class="label">Ingresos ($)</label>
+                        <input name="total_income" id="session-income-input" type="number" step="0.01" class="input-field" value="45" required oninput="updateSessionCommissionPreview()">
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button type="submit" class="btn-primary w-full" id="session-submit-btn">Guardar</button>
+                        <button type="button" class="btn-secondary" onclick="resetSessionForm()">Cancelar</button>
+                    </div>
+                    <div class="col-span-4">
+                        <div id="session-commission-preview" class="bg-dark-700 rounded-xl p-3 flex items-center gap-3">
+                            <i class="fas fa-percent text-accent-400"></i>
+                            <span class="text-gray-400 text-sm">Comisión estimada:</span>
+                            <span class="font-semibold text-red-400" id="session-commission-value">-$5.91</span>
+                            <span class="text-gray-600 text-xs" id="session-commission-detail">(13.79% × $43.20 = $5.91)</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6">
+                <div id="sessions-list" class="col-span-2 space-y-3"></div>
+                <div id="profitability-panel" class="card hidden">
+                    <h3 class="font-semibold text-white mb-4">
+                        <i class="fas fa-chart-pie mr-2 text-accent-400"></i>Resumen del Día
+                    </h3>
+                    <div id="profitability-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRIPS -->
+        <div id="page-trips" class="page hidden p-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-white">Analizador de Viajes</h2>
+                <p class="text-gray-500 text-sm mt-1">Analiza la rentabilidad de viajes individuales en tiempo real</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+                <!-- Input Panel -->
+                <div class="card">
+                    <h3 class="font-semibold text-white mb-4">
+                        <i class="fas fa-edit mr-2 text-accent-400"></i>Datos del Viaje
+                    </h3>
+                    <div class="space-y-4">
+                        <div><label class="label">Vehículo</label><select id="trip-vehicle-select" class="input-field" onchange="recalculateTrip()"></select></div>
+                        <div class="flex gap-3 items-end">
+                            <div class="flex-1"><label class="label">Plataforma</label><select id="trip-platform-select" class="input-field" onchange="onTripPlatformChange()">
+                                <option value="InDrive">InDrive</option>
+                                <option value="Uber">Uber</option>
+                                <option value="Taxi">Taxi</option>
+                                <option value="Didi">Didi</option>
+                            </select></div>
+                            <div style="width: 110px;">
+                                <label class="label">Comisión %</label>
+                                <input id="trip-commission-rate" type="number" step="0.01" min="0" max="100" class="input-field" value="13.79" oninput="recalculateTrip()">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="label">Pago ($)</label><input id="trip-payment" type="number" step="0.01" class="input-field" value="5" oninput="recalculateTrip()"></div>
+                            <div>
+                                <label class="label flex items-center gap-2">
+                                    Distancia viaje (km)
+                                    <span class="tooltip-trigger">
+                                        <i class="fas fa-question-circle text-gray-600 text-xs"></i>
+                                        <span class="tooltip-content">Solo los km del trayecto pagado. La distancia de recogida se ingresa aparte.</span>
+                                    </span>
+                                </label>
+                                <input id="trip-distance" type="number" step="0.1" class="input-field" value="8" oninput="recalculateTrip()">
+                            </div>
+                            <div>
+                                <label class="label flex items-center gap-2">
+                                    Pickup (km)
+                                    <span class="tooltip-trigger">
+                                        <i class="fas fa-question-circle text-gray-600 text-xs"></i>
+                                        <span class="tooltip-content">Km que recorres vacío hasta el pasajero. Suma a gastos de combustible y desgaste pero NO genera ingreso.</span>
+                                    </span>
+                                </label>
+                                <input id="trip-pickup" type="number" step="0.1" class="input-field" value="0" oninput="recalculateTrip()">
+                            </div>
+                            <div><label class="label">Tiempo (min)</label><input id="trip-duration" type="number" class="input-field" value="15" oninput="recalculateTrip()"></div>
+                            <div><label class="label">Propina ($)</label><input id="trip-tip" type="number" step="0.01" class="input-field" value="0" oninput="recalculateTrip()"></div>
+                            <div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="space-y-4">
+                    <!-- Net Profit Big Card -->
+                    <div class="card text-center" id="trip-profit-card">
+                        <p class="text-gray-500 text-sm mb-1">GANANCIA NETA</p>
+                        <p class="text-4xl font-bold text-green-400" id="trip-net-profit">$0.00</p>
+                        <div class="flex justify-center gap-6 mt-3">
+                            <div><p class="text-xs text-gray-500">Por hora</p><p class="font-semibold text-blue-400" id="trip-per-hour">$0.00</p></div>
+                            <div><p class="text-xs text-gray-500">Por km</p><p class="font-semibold text-purple-400" id="trip-per-km">$0.00</p></div>
+                            <div><p class="text-xs text-gray-500">Por min</p><p class="font-semibold text-orange-400" id="trip-per-min">$0.00</p></div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge" id="trip-rating">Ingresa los datos</span>
+                        </div>
+                    </div>
+
+                    <!-- Cost Breakdown -->
+                    <div class="card">
+                        <h3 class="font-semibold text-white mb-3">
+                            <i class="fas fa-receipt mr-2 text-accent-400"></i>Desglose de Costos
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center py-2 border-b border-dark-600">
+                                <span class="text-gray-400 text-sm">Pago del viaje</span>
+                                <span class="text-green-400 font-semibold" id="detail-payment">+$5.00</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-600">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400 text-sm">Comisión</span>
+                                    <span class="text-xs text-gray-600" id="detail-commission-pct">(13.79%)</span>
+                                </div>
+                                <span class="text-red-400" id="detail-commission">-$0.69</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-600">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400 text-sm">Combustible</span>
+                                    <span class="text-xs text-gray-600" id="detail-fuel-calc">(8km ÷ 40km/gal × $3.30)</span>
+                                </div>
+                                <span class="text-red-400" id="detail-fuel">-$0.66</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-600" id="pickup-row" style="display:none">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400 text-sm">Recogida</span>
+                                    <span class="text-xs text-gray-600" id="detail-pickup-calc">(0km × combustible + desgaste)</span>
+                                </div>
+                                <span class="text-red-400" id="detail-pickup">-$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-600" id="tip-row" style="display:none">
+                                <span class="text-gray-400 text-sm">Propina</span>
+                                <span class="text-green-400" id="detail-tip">+$0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-600">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400 text-sm">Desgaste</span>
+                                    <span class="text-xs text-gray-600" id="detail-wear-calc">(8km × $0.05)</span>
+                                </div>
+                                <span class="text-red-400" id="detail-wear">-$0.40</span>
+                            </div>
+                        </div>
+                        <!-- Total deduction bar -->
+                        <div class="mt-4 p-3 bg-dark-700 rounded-xl">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-400 text-xs">Gastos operativos</span>
+                                <span class="text-red-400 font-semibold" id="detail-total-deductions">-$1.75</span>
+                            </div>
+                            <div class="w-full bg-dark-600 rounded-full h-2">
+                                <div class="bg-red-400 h-2 rounded-full transition-all" id="deduction-bar" style="width: 35%"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-1 text-right" id="deduction-pct-text">35% en gastos operativos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="page-dashboard" class="page hidden p-8">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Dashboard</h2>
+                    <p class="text-gray-500 text-sm mt-1">Resumen de tu actividad</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="setDashFilter('today')" class="btn-secondary text-xs dash-filter" data-filter="today">Hoy</button>
+                    <button onclick="setDashFilter('week')" class="btn-secondary text-xs dash-filter" data-filter="week">Semana</button>
+                    <button onclick="setDashFilter('month')" class="btn-secondary text-xs dash-filter active-filter" data-filter="month">Mes</button>
+                    <button onclick="setDashFilter('all')" class="btn-secondary text-xs dash-filter" data-filter="all">Todo</button>
+                </div>
+            </div>
+            <div id="dashboard-stats" class="grid grid-cols-4 gap-5 mb-6"></div>
+            <div id="dashboard-details" class="grid grid-cols-2 gap-6"></div>
+        </div>
+
+    </main>
+
+    <!-- MODAL -->
+    <div id="app-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white" id="modal-title"></h3>
+                <button onclick="closeModal()" class="w-8 h-8 bg-dark-700 rounded-lg flex items-center justify-center hover:bg-dark-600 transition-colors">
+                    <i class="fas fa-times text-gray-400 text-sm"></i>
+                </button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
     </div>
+
+    <script>
+    const API = '/api';
+    let vehicles = [];
+    let sessions = [];
+
+    // Navigation
+    function showPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        document.getElementById('page-' + page).classList.remove('hidden');
+        document.querySelectorAll('.sidebar-item').forEach(n => n.classList.remove('active'));
+        document.querySelector(`[data-page="${page}"]`).classList.add('active');
+        if (window.innerWidth <= 768) {
+            document.querySelector('aside').classList.remove('sidebar-open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+        if (page === 'home') loadHome();
+        if (page === 'vehicles') loadVehicles();
+        if (page === 'sessions') loadSessions();
+        if (page === 'trips') { loadVehicleSelects().then(() => recalculateTrip()); }
+        if (page === 'dashboard') loadDashboard();
+    }
+
+    function getGreeting() {
+        const h = new Date().getHours();
+        if (h < 12) return '¡Buenos días!';
+        if (h < 18) return '¡Buenas tardes!';
+        return '¡Buenas noches!';
+    }
+
+    async function loadHome() {
+        document.getElementById('home-greeting').textContent = getGreeting() + ' Bienvenido';
+        const vehs = await api('/vehicles');
+        const sess = await api('/sessions');
+        const widgetsDiv = document.getElementById('home-widgets');
+        let widgetsHtml = '';
+
+        if (sess.length > 0) {
+            const last = sess[sess.length - 1];
+            const v = vehs.find(x => x.id === last.vehicle_id);
+            const vname = v ? `${v.brand} ${v.model}` : 'N/A';
+            const rateMap = { 'InDrive': 13.79, 'Uber': 25.0, 'Taxi': 0.0, 'Didi': 20.0 };
+            const rate = rateMap[last.platform] || 0;
+            const fuelCost = v ? (last.km_driven / v.consumption_km_per_gallon) * v.fuel_price_per_gallon : 0;
+            const commCost = last.total_income * (rate / 100);
+            const wearCost = v ? last.km_driven * v.maintenance_cost_per_km : 0;
+            const net = last.total_income - fuelCost - commCost - wearCost;
+            const netH = last.hours_worked > 0 ? (net / last.hours_worked).toFixed(2) : '0.00';
+            const platformColors = { 'InDrive': 'green', 'Uber': 'blue', 'Taxi': 'yellow', 'Didi': 'purple' };
+            const pc = platformColors[last.platform] || 'blue';
+
+            widgetsHtml += `
+            <div class="card cursor-pointer" onclick="showPage('sessions')">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-clock text-green-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">Última Jornada</p>
+                        <p class="text-white font-semibold text-sm">${vname}</p>
+                    </div>
+                    <span class="badge badge-${pc} ml-auto text-[10px]">${last.platform}</span>
+                </div>
+                <div class="mini-grid">
+                    <div class="bg-dark-700 rounded-lg p-2 text-center">
+                        <p class="mini-val text-green-400">$${net.toFixed(2)}</p>
+                        <p class="text-[10px] text-gray-500">Neto</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-lg p-2 text-center">
+                        <p class="mini-val text-blue-400">$${netH}</p>
+                        <p class="text-[10px] text-gray-500">Neto/h</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-lg p-2 text-center">
+                        <p class="mini-val text-white">${last.km_driven}km</p>
+                        <p class="text-[10px] text-gray-500">${last.total_trips} viajes</p>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        if (vehs.length > 0) {
+            const v = vehs[0];
+            const fuelPrices = { 'Extra / Ecopaís': 3.26, 'Súper Premium 95': 5.61, 'Diésel Premium': 3.20, 'Gas GLP': 1.33, 'Eléctrico': 0.10 };
+            widgetsHtml += `
+            <div class="card cursor-pointer" onclick="showPage('vehicles')">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-car text-blue-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">Vehículo Activo</p>
+                        <p class="text-white font-semibold text-sm">${v.brand} ${v.model} ${v.year}</p>
+                    </div>
+                </div>
+                <div class="mini-grid">
+                    <div class="bg-dark-700 rounded-lg p-2 text-center">
+                        <p class="mini-val text-white">${v.consumption_km_per_gallon}</p>
+                        <p class="text-[10px] text-gray-500">km/gal</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-lg p-2 text-center">
+                        <p class="mini-val text-white">$${v.fuel_price_per_gallon}</p>
+                        <p class="text-[10px] text-gray-500">${v.fuel_type.split(' ')[0]}/gal</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-lg p-2 text-center">
+                        <p class="mini-val text-white">$${v.maintenance_cost_per_km}</p>
+                        <p class="text-[10px] text-gray-500">mant/km</p>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todaySessions = sess.filter(s => s.date === todayStr);
+        const todayNet = todaySessions.reduce((a, s) => {
+            const v = vehs.find(x => x.id === s.vehicle_id);
+            const rateMap = { 'InDrive': 13.79, 'Uber': 25.0, 'Taxi': 0.0, 'Didi': 20.0 };
+            const rate = rateMap[s.platform] || 0;
+            const fuel = v ? (s.km_driven / v.consumption_km_per_gallon) * v.fuel_price_per_gallon : 0;
+            const comm = s.total_income * (rate / 100);
+            const wear = v ? s.km_driven * v.maintenance_cost_per_km : 0;
+            return a + s.total_income - fuel - comm - wear;
+        }, 0);
+        const todayHours = todaySessions.reduce((a, s) => a + s.hours_worked, 0);
+        const savedGoal = parseFloat(localStorage.getItem('metaDiaria') || '50');
+        const pct = Math.min((todayNet / savedGoal) * 100, 100);
+        const pctBar = Math.min((todayNet / savedGoal) * 100, 100);
+        const goalReached = todayNet >= savedGoal;
+        const remaining = Math.max(savedGoal - todayNet, 0);
+        const avgHour = todayHours > 0 ? todayNet / todayHours : 0;
+        const hoursLeft = avgHour > 0 ? (remaining / avgHour).toFixed(1) : '—';
+        const barColor = goalReached ? 'bg-green-500' : pctBar >= 60 ? 'bg-blue-500' : pctBar >= 30 ? 'bg-yellow-500' : 'bg-orange-500';
+        const textColor = goalReached ? 'text-green-400' : pctBar >= 60 ? 'text-blue-400' : pctBar >= 30 ? 'text-yellow-400' : 'text-orange-400';
+
+        widgetsHtml += `
+        <div class="card cursor-pointer" onclick="openGoalModal()" style="border: 1px solid ${goalReached ? '#22c55e' : 'rgba(108,99,255,0.3)'};">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 bg-${goalReached ? 'green' : 'accent-400'}/10 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-${goalReached ? 'trophy' : 'dollar-sign'} text-${goalReached ? 'green' : 'accent-400'}-400"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xs text-gray-500">Meta de Hoy</p>
+                    <p class="text-white font-semibold text-sm">$${todayNet.toFixed(2)} / $${savedGoal.toFixed(2)}</p>
+                </div>
+                <span class="text-[11px] text-gray-600"><i class="fas fa-gear"></i></span>
+            </div>
+            <div class="w-full h-3 bg-dark-700 rounded-full overflow-hidden mb-2">
+                <div class="${barColor} h-full rounded-full transition-all duration-700" style="width:${pctBar}%"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-${textColor} font-bold text-sm">${pct.toFixed(1)}%</span>
+                ${goalReached
+                    ? '<span class="text-green-400 text-[11px] font-semibold">Meta alcanzada</span>'
+                    : `<span class="text-gray-500 text-[11px]">Faltan $${remaining.toFixed(2)} (~${hoursLeft}h)</span>`
+                }
+            </div>
+        </div>`;
+
+        widgetsDiv.innerHTML = widgetsHtml;
+    }
+
+    function openGoalModal() {
+        const current = parseFloat(localStorage.getItem('metaDiaria') || '50');
+        openModal('Meta Diaria', `
+            <div class="text-center mb-5">
+                <div class="w-14 h-14 bg-accent-400/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-bullseyee text-accent-400 text-xl"></i>
+                </div>
+                <p class="text-gray-400 text-sm">Define cuánto quieres ganar neto cada día.</p>
+            </div>
+            <div class="mb-5">
+                <label class="label">Ganancia neta diaria ($)</label>
+                <div class="flex items-center gap-3">
+                    <input id="goal-input" type="number" step="0.01" min="0" value="${current}" class="input-field flex-1 text-center text-xl font-bold text-white">
+                    <span class="text-gray-500 text-sm">/ día</span>
+                </div>
+                <div class="flex gap-2 mt-3 justify-center">
+                    <button onclick="document.getElementById('goal-input').value='30'" class="px-3 py-1.5 bg-dark-700 rounded-lg text-gray-400 text-xs hover:bg-dark-600 transition-colors">$30</button>
+                    <button onclick="document.getElementById('goal-input').value='50'" class="px-3 py-1.5 bg-dark-700 rounded-lg text-gray-400 text-xs hover:bg-dark-600 transition-colors">$50</button>
+                    <button onclick="document.getElementById('goal-input').value='80'" class="px-3 py-1.5 bg-dark-700 rounded-lg text-gray-400 text-xs hover:bg-dark-600 transition-colors">$80</button>
+                    <button onclick="document.getElementById('goal-input').value='100'" class="px-3 py-1.5 bg-dark-700 rounded-lg text-gray-400 text-xs hover:bg-dark-600 transition-colors">$100</button>
+                </div>
+            </div>
+            <button onclick="saveGoal()" class="w-full btn-primary py-3 text-sm">
+                <i class="fas fa-check mr-2"></i>Guardar Meta
+            </button>
+        `);
+    }
+    function saveGoal() {
+        const val = parseFloat(document.getElementById('goal-input').value);
+        if (isNaN(val) || val <= 0) return;
+        localStorage.setItem('metaDiaria', val.toString());
+        closeModal();
+        loadHome();
+    }
+
+    function showCalcLogicModal(type) {
+        const info = {
+            comisiones: {
+                title: '% Comisiones por Plataforma',
+                icon: 'fas fa-percentage',
+                color: 'blue',
+                body: `<p class="text-gray-400 text-sm mb-3">Cada plataforma cobra un porcentaje sobre el <b>ingreso bruto</b> de cada viaje:</p>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center bg-dark-700 rounded-lg px-3 py-2"><span class="text-white text-sm">InDrive</span><span class="badge badge-green">13.79%</span></div>
+                    <div class="flex justify-between items-center bg-dark-700 rounded-lg px-3 py-2"><span class="text-white text-sm">Uber</span><span class="badge badge-blue">25.00%</span></div>
+                    <div class="flex justify-between items-center bg-dark-700 rounded-lg px-3 py-2"><span class="text-white text-sm">Didi</span><span class="badge badge-purple">20.00%</span></div>
+                    <div class="flex justify-between items-center bg-dark-700 rounded-lg px-3 py-2"><span class="text-white text-sm">Taxi</span><span class="badge badge-yellow">0.00%</span></div>
+                </div>
+                <p class="text-gray-500 text-[11px] mt-3">Fórmula: <code class="text-accent-400">Comisión = Ingreso × (Tasa / 100)</code></p>`
+            },
+            combustible: {
+                title: 'Cálculo de Combustible',
+                icon: 'fas fa-gas-pump',
+                color: 'yellow',
+                body: `<p class="text-gray-400 text-sm mb-3">El costo de combustible se calcula por los <b>km recorridos</b> en cada jornada:</p>
+                <div class="bg-dark-700 rounded-xl p-4 mb-3 text-center">
+                    <p class="text-white text-sm font-semibold mb-2">Fórmula</p>
+                    <p class="text-accent-400 text-sm">Combustible = (Km Recorridos ÷ Rendimiento) × Precio/galón</p>
+                </div>
+                <p class="text-gray-400 text-xs mb-2"><b>Ejemplo con tu Spark:</b></p>
+                <p class="text-gray-500 text-xs">40 km ÷ 40 km/gal = 1 galón × $3.26 = <span class="text-yellow-400 font-semibold">$3.26</span></p>
+                <p class="text-gray-500 text-[11px] mt-3">Precios según tabla oficial del gobierno (sistema de bandas, actualización mensual).</p>`
+            },
+            mantenimiento: {
+                title: 'Costo de Mantenimiento',
+                icon: 'fas fa-wrench',
+                color: 'purple',
+                body: `<p class="text-gray-400 text-sm mb-3">Incluye: aceite, llantas, frenos, filtros, desgaste general.</p>
+                <div class="bg-dark-700 rounded-xl p-4 mb-3 text-center">
+                    <p class="text-white text-sm font-semibold mb-2">Fórmula</p>
+                    <p class="text-accent-400 text-sm">Mantenimiento = Km Recorridos × Costo por km</p>
+                </div>
+                <p class="text-gray-400 text-xs mb-2"><b>Ejemplo:</b></p>
+                <p class="text-gray-500 text-xs">25 km × $0.05/km = <span class="text-purple-400 font-semibold">$1.25</span></p>
+                <p class="text-gray-500 text-[11px] mt-3">El costo/km se calcula como promedio según el tipo de vehículo y condiciones del Ecuador.</p>`
+            },
+            ganancia: {
+                title: 'Ganancia Real (Neta)',
+                icon: 'fas fa-hand-holding-dollar',
+                color: 'green',
+                body: `<p class="text-gray-400 text-sm mb-3">La ganancia neta es lo que <b>realmente te queda en el bolsillo</b>:</p>
+                <div class="bg-dark-700 rounded-xl p-4 mb-3 text-center">
+                    <p class="text-white text-sm font-semibold mb-2">Fórmula Completa</p>
+                    <p class="text-green-400 text-sm">Neta = Ingreso Bruto − Combustible − Comisión − Mantenimiento</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-sm"><span class="text-green-400 font-bold">+</span><span class="text-white">Ingreso Bruto (lo que te pagan los pasajeros)</span></div>
+                    <div class="flex items-center gap-2 text-sm"><span class="text-red-400 font-bold">−</span><span class="text-white">Comisión de la plataforma</span></div>
+                    <div class="flex items-center gap-2 text-sm"><span class="text-red-400 font-bold">−</span><span class="text-white">Combustible utilizado</span></div>
+                    <div class="flex items-center gap-2 text-sm"><span class="text-red-400 font-bold">−</span><span class="text-white">Mantenimiento del vehículo</span></div>
+                </div>`
+            }
+        };
+        const d = info[type];
+        if (!d) return;
+        openModal(d.title, `
+            <div class="text-center mb-5">
+                <div class="w-14 h-14 bg-${d.color}-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <i class="${d.icon} text-${d.color}-400 text-xl"></i>
+                </div>
+            </div>
+            ${d.body}
+        `);
+    }
+
+    // API calls — IndexedDB offline
+    async function api(path, options = {}) {
+        return offlineApi(path, options);
+    }
+
+    // Vehicles
+    // Fuel price auto-fill for Ecuador
+    const fuelPrices = {
+        'Extra / Ecopaís': 3.26,
+        'Súper Premium 95': 5.61,
+        'Diésel Premium': 3.20,
+        'Gas GLP': 1.33,
+        'Eléctrico': 0.10
+    };
+
+    function onFuelTypeChange(fuelType) {
+        const price = fuelPrices[fuelType];
+        if (price !== undefined) {
+            document.getElementById('vehicle-fuel-price').value = price.toFixed(2);
+        }
+    }
+
+    async function loadVehicles() {
+        vehicles = await api('/vehicles');
+        const list = document.getElementById('vehicles-list');
+        const formContainer = document.getElementById('vehicle-form-container');
+
+        if (vehicles.length === 0) {
+            list.innerHTML = '<div class="card text-center col-span-2 py-12"><i class="fas fa-car text-gray-600 text-4xl mb-4"></i><p class="text-gray-500">No hay vehículos registrados</p><p class="text-gray-600 text-sm mt-1">Haz clic en "Nuevo Vehículo" para comenzar</p></div>';
+            formContainer.classList.remove('hidden');
+            return;
+        }
+
+        formContainer.classList.add('hidden');
+
+        list.innerHTML = vehicles.map(v => `
+            <div class="card" style="${v.is_active ? 'border: 1px solid #22c55e;' : ''}">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-car text-blue-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white">${v.brand} ${v.model}</h3>
+                            <p class="text-gray-500 text-sm">${v.year} · ${v.fuel_type}</p>
+                        </div>
+                        ${v.is_active ? '<span class="badge badge-green text-[10px] ml-2"><i class="fas fa-check-circle mr-1"></i>En uso</span>' : ''}
+                    </div>
+                    <div class="flex gap-2">
+                        ${!v.is_active ? `<button onclick="setActiveVehicle(${v.id})" class="btn-secondary text-xs" title="Usar este vehículo"><i class="fas fa-check"></i></button>` : ''}
+                        <button onclick="editVehicle(${v.id})" class="btn-secondary" title="Editar"><i class="fas fa-pen text-sm"></i></button>
+                        <button onclick="deleteVehicle(${v.id})" class="btn-danger" title="Eliminar"><i class="fas fa-trash text-sm"></i></button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                        <div class="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-gauge-high text-blue-400 text-xs"></i>
+                        </div>
+                        <p class="font-semibold text-white">${v.consumption_km_per_gallon} km/gal</p>
+                        <p class="text-[10px] text-gray-500">Rendimiento</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                        <div class="w-8 h-8 bg-yellow-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-gas-pump text-yellow-400 text-xs"></i>
+                        </div>
+                        <p class="font-semibold text-white">$${v.fuel_price_per_gallon}/gal</p>
+                        <p class="text-[10px] text-gray-500">Combustible</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                        <div class="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-wrench text-purple-400 text-xs"></i>
+                        </div>
+                        <p class="font-semibold text-white">$${v.maintenance_cost_per_km}/km</p>
+                        <p class="text-[10px] text-gray-500">Mantenimiento</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function toggleVehicleForm() {
+        const form = document.getElementById('vehicle-form-container');
+        if (form.classList.contains('hidden')) {
+            resetVehicleForm();
+            form.classList.remove('hidden');
+        } else {
+            form.classList.add('hidden');
+        }
+    }
+
+    function resetVehicleForm() {
+        const form = document.getElementById('vehicle-form');
+        form.reset();
+        form.removeAttribute('data-editing-id');
+        document.getElementById('catalog-search').value = '';
+        document.querySelector('#vehicle-form-container h3').innerHTML = '<i class="fas fa-car mr-2 text-accent-400"></i>Registrar Vehículo';
+        document.querySelector('#vehicle-form-container button[type="submit"]').textContent = 'Guardar';
+    }
+
+    function editVehicle(id) {
+        const v = vehicles.find(x => x.id === id);
+        if (!v) return;
+        const form = document.getElementById('vehicle-form');
+        form.setAttribute('data-editing-id', id);
+        form.brand.value = v.brand;
+        form.model.value = v.model;
+        form.year.value = v.year;
+        document.getElementById('vehicle-fuel-type').value = v.fuel_type;
+        onFuelTypeChange(v.fuel_type);
+        form.consumption_km_per_gallon.value = v.consumption_km_per_gallon;
+        form.fuel_price_per_gallon.value = v.fuel_price_per_gallon;
+        form.maintenance_cost_per_km.value = v.maintenance_cost_per_km;
+        document.getElementById('catalog-search').value = v.brand + ' ' + v.model;
+        document.querySelector('#vehicle-form-container h3').innerHTML = '<i class="fas fa-pen mr-2 text-accent-400"></i>Editar Vehículo';
+        document.querySelector('#vehicle-form-container button[type="submit"]').textContent = 'Actualizar';
+        document.getElementById('vehicle-form-container').classList.remove('hidden');
+        document.getElementById('vehicle-form-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function setActiveVehicle(id) {
+        await api('/vehicles/' + id + '/activate', { method: 'PUT' });
+        loadVehicles();
+    }
+
+    async function createVehicle(e) {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd);
+        data.year = parseInt(data.year) || 2005;
+        data.consumption_km_per_gallon = parseFloat(data.consumption_km_per_gallon) || 40;
+        data.fuel_price_per_gallon = parseFloat(data.fuel_price_per_gallon) || 3.30;
+        data.maintenance_cost_per_km = parseFloat(data.maintenance_cost_per_km) || 0.05;
+
+        const editingId = e.target.getAttribute('data-editing-id');
+        if (editingId) {
+            await api('/vehicles/' + editingId, { method: 'PUT', body: data });
+        } else {
+            data.is_active = vehicles.length === 0 ? 1 : 0;
+            await api('/vehicles', { method: 'POST', body: data });
+        }
+        resetVehicleForm();
+        document.getElementById('vehicle-form-container').classList.add('hidden');
+        loadVehicles();
+    }
+
+    async function deleteVehicle(id) {
+        if (!confirm('¿Eliminar este vehículo?')) return;
+        await api('/vehicles/' + id, { method: 'DELETE' });
+        loadVehicles();
+    }
+
+    // Sessions
+    async function loadVehicleSelects() {
+        vehicles = await api('/vehicles');
+        const opts = vehicles.map(v => `<option value="${v.id}">${v.brand} ${v.model} (${v.year})</option>`).join('');
+        document.getElementById('session-vehicle-select').innerHTML = opts;
+        document.getElementById('trip-vehicle-select').innerHTML = opts;
+    }
+
+    let catalogSearchTimeout = null;
+    async function searchCatalog(query) {
+        const resultsDiv = document.getElementById('catalog-results');
+        if (!query || query.length < 2) {
+            resultsDiv.classList.add('hidden');
+            return;
+        }
+        clearTimeout(catalogSearchTimeout);
+        catalogSearchTimeout = setTimeout(async () => {
+            const results = await api('/vehicle-catalog?search=' + encodeURIComponent(query));
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="p-3 text-gray-500 text-sm">No se encontraron resultados</div>';
+            } else {
+                resultsDiv.innerHTML = results.map(v => `
+                    <div class="p-3 hover:bg-dark-600 cursor-pointer border-b border-dark-600 last:border-0" onclick='selectCatalogItem(${JSON.stringify(v).replace(/'/g, "&#39;")})'>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-white text-sm">${v.brand} ${v.model}</p>
+                                <p class="text-gray-500 text-xs">${v.year_start}${v.year_end ? '-' + v.year_end : ''} · ${v.fuel_type} · ${v.consumption_km_per_gallon} km/gal</p>
+                            </div>
+                            <i class="fas fa-arrow-right text-accent-400 text-xs"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            resultsDiv.classList.remove('hidden');
+        }, 300);
+    }
+
+    function selectCatalogItem(item) {
+        const form = document.getElementById('vehicle-form');
+        form.brand.value = item.brand;
+        form.model.value = item.model;
+        form.year.value = Math.floor((item.year_start + (item.year_end || 2024)) / 2);
+        document.getElementById('vehicle-fuel-type').value = item.fuel_type;
+        onFuelTypeChange(item.fuel_type);
+        form.consumption_km_per_gallon.value = item.consumption_km_per_gallon;
+        form.maintenance_cost_per_km.value = item.maintenance_cost_per_km;
+        document.getElementById('catalog-results').classList.add('hidden');
+        document.getElementById('catalog-search').value = item.brand + ' ' + item.model;
+    }
+
+    document.addEventListener('click', function(e) {
+        const resultsDiv = document.getElementById('catalog-results');
+        const searchInput = document.getElementById('catalog-search');
+        if (resultsDiv && searchInput && !resultsDiv.contains(e.target) && e.target !== searchInput) {
+            resultsDiv.classList.add('hidden');
+        }
+    });
+
+    async function loadSessions() {
+        await loadVehicleSelects();
+        sessions = await api('/sessions');
+        const list = document.getElementById('sessions-list');
+        const formContainer = document.getElementById('session-form-container');
+
+        if (sessions.length === 0) {
+            list.innerHTML = '<div class="card text-center py-12 col-span-2"><i class="fas fa-clock text-gray-600 text-4xl mb-4"></i><p class="text-gray-500">No hay jornadas registradas</p><p class="text-gray-600 text-sm mt-1">Haz clic en "Nueva Jornada" para comenzar</p></div>';
+            formContainer.classList.remove('hidden');
+            setTodayDate();
+            updateSessionCommissionPreview();
+            return;
+        }
+
+        formContainer.classList.add('hidden');
+
+        list.innerHTML = sessions.map(s => {
+            const v = vehicles.find(x => x.id === s.vehicle_id);
+            const vname = v ? `${v.brand} ${v.model}` : 'N/A';
+            const platformColors = { 'InDrive': 'badge-green', 'Uber': 'badge-blue', 'Taxi': 'badge-yellow', 'Didi': 'badge-purple' };
+            const kmText = s.km_driven > 0 ? s.km_driven + 'km' : '—';
+            const tripsText = s.total_trips > 0 ? s.total_trips : '—';
+            return `
+            <div class="card card-interactive" onclick="selectSession(${s.id})">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-dark-700 rounded-full flex items-center justify-center">
+                            <i class="fas fa-road text-gray-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white text-sm">${vname}</h3>
+                            <p class="text-gray-500 text-xs">${formatDisplayDate(s.date)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="badge ${platformColors[s.platform] || 'badge-blue'}">${s.platform}</span>
+                        <button onclick="event.stopPropagation();editSession(${s.id})" class="btn-secondary" title="Editar"><i class="fas fa-pen text-xs"></i></button>
+                        <button onclick="event.stopPropagation();deleteSession(${s.id})" class="btn-danger" title="Eliminar"><i class="fas fa-trash text-xs"></i></button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-3 mt-4">
+                    <div class="text-center"><p class="text-lg font-bold text-white">${s.hours_worked}h</p><p class="text-xs text-gray-500">Horas</p></div>
+                    <div class="text-center"><p class="text-lg font-bold text-white">${kmText}</p><p class="text-xs text-gray-500">Kilómetros</p></div>
+                    <div class="text-center"><p class="text-lg font-bold text-white">${tripsText}</p><p class="text-xs text-gray-500">Viajes</p></div>
+                    <div class="text-center"><p class="text-lg font-bold text-green-400">$${s.total_income}</p><p class="text-xs text-gray-500">Ingresos</p></div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function setTodayDate() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        document.getElementById('session-date-input').value = `${y}-${m}-${d}`;
+    }
+
+    function formatDisplayDate(isoDate) {
+        if (!isoDate) return '';
+        const [y, m, d] = isoDate.split('-');
+        return `${d}/${m}/${y}`;
+    }
+
+    const sessionCommissionRates = { 'InDrive': 13.79, 'Uber': 25.0, 'Taxi': 0.0, 'Didi': 20.0 };
+
+    function updateSessionCommissionPreview() {
+        const platform = document.getElementById('session-platform-select').value;
+        const income = parseFloat(document.getElementById('session-income-input').value) || 0;
+        const rate = sessionCommissionRates[platform] || 0;
+        const commission = income * (rate / 100);
+        document.getElementById('session-commission-value').textContent = `-$${commission.toFixed(2)}`;
+        document.getElementById('session-commission-detail').textContent = `(${rate}% × $${income.toFixed(2)} = $${commission.toFixed(2)})`;
+    }
+
+    function toggleSessionForm() {
+        const container = document.getElementById('session-form-container');
+        if (container.classList.contains('hidden')) {
+            resetSessionForm();
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+
+    function resetSessionForm() {
+        const form = document.getElementById('session-form');
+        form.reset();
+        form.removeAttribute('data-editing-id');
+        document.getElementById('session-submit-btn').textContent = 'Guardar';
+        document.querySelector('#session-form-container h3').innerHTML = '<i class="fas fa-clock mr-2 text-accent-400"></i>Registrar Jornada';
+        setTodayDate();
+        updateSessionCommissionPreview();
+    }
+
+    function editSession(id) {
+        const s = sessions.find(x => x.id === id);
+        if (!s) return;
+        const form = document.getElementById('session-form');
+        form.setAttribute('data-editing-id', id);
+        form.vehicle_id.value = s.vehicle_id;
+        form.platform.value = s.platform;
+        document.getElementById('session-date-input').value = s.date;
+        form.hours_worked.value = s.hours_worked;
+        form.km_driven.value = s.km_driven || '';
+        form.total_trips.value = s.total_trips || '';
+        form.total_income.value = s.total_income;
+        document.getElementById('session-submit-btn').textContent = 'Actualizar';
+        document.querySelector('#session-form-container h3').innerHTML = '<i class="fas fa-pen mr-2 text-accent-400"></i>Editar Jornada';
+        document.getElementById('session-form-container').classList.remove('hidden');
+        updateSessionCommissionPreview();
+        document.getElementById('session-form-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function createSession(e) {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd);
+        data.vehicle_id = parseInt(data.vehicle_id);
+        data.hours_worked = parseFloat(data.hours_worked) || 0;
+        data.km_driven = parseFloat(data.km_driven) || 0;
+        data.total_trips = parseInt(data.total_trips) || 0;
+        data.total_income = parseFloat(data.total_income);
+
+        const editingId = e.target.getAttribute('data-editing-id');
+        if (editingId) {
+            await api('/sessions/' + editingId, { method: 'PUT', body: data });
+        } else {
+            await api('/sessions', { method: 'POST', body: data });
+        }
+        resetSessionForm();
+        document.getElementById('session-form-container').classList.add('hidden');
+        loadSessions();
+    }
+
+    async function deleteSession(id) {
+        if (!confirm('¿Eliminar esta jornada?')) return;
+        await api('/sessions/' + id, { method: 'DELETE' });
+        document.getElementById('profitability-panel').classList.add('hidden');
+        loadSessions();
+    }
+
+    async function selectSession(id) {
+        const data = await api('/profitability/' + id);
+        const panel = document.getElementById('profitability-panel');
+        panel.classList.remove('hidden');
+        const profitClass = data.net_profit >= 0 ? 'profit-positive' : 'profit-negative';
+        document.getElementById('profitability-content').innerHTML = `
+            <div class="space-y-3">
+                <div class="flex justify-between items-center py-3 border-b border-dark-600">
+                    <span class="text-gray-400 text-sm">Ingresos</span>
+                    <span class="font-semibold text-green-400">$${data.total_income.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between items-center py-3 border-b border-dark-600">
+                    <span class="text-gray-400 text-sm">Comisión</span>
+                    <span class="text-red-400">-$${data.commission_cost.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between items-center py-3 border-b border-dark-600">
+                    <span class="text-gray-400 text-sm">Combustible</span>
+                    <span class="text-red-400">-$${data.fuel_cost.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between items-center py-3 border-b border-dark-600">
+                    <span class="text-gray-400 text-sm">Desgaste</span>
+                    <span class="text-red-400">-$${data.wear_cost.toFixed(2)}</span>
+                </div>
+                <div class="flex justify-between items-center py-4 bg-dark-700 rounded-xl px-4 mt-2">
+                    <span class="font-bold text-white">GANANCIA REAL</span>
+                    <span class="font-bold text-xl ${profitClass}">$${data.net_profit.toFixed(2)}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <div class="bg-dark-700 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 mb-1">Por Hora</p>
+                        <p class="text-2xl font-bold text-blue-400">$${data.profit_per_hour.toFixed(2)}</p>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 mb-1">Por Km</p>
+                        <p class="text-2xl font-bold text-purple-400">$${data.profit_per_km.toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Trips - Interactive Analyzer
+    const commissionRates = { 'InDrive': 13.79, 'Uber': 25.0, 'Taxi': 0.0, 'Didi': 20.0 };
+
+    function onTripPlatformChange() {
+        const platform = document.getElementById('trip-platform-select').value;
+        const rate = commissionRates[platform] || 0;
+        document.getElementById('trip-commission-rate').value = rate;
+        recalculateTrip();
+    }
+
+    async function recalculateTrip() {
+        if (vehicles.length === 0) vehicles = await api('/vehicles');
+        const vehicleId = document.getElementById('trip-vehicle-select').value;
+        const vehicle = vehicles.find(v => v.id == vehicleId);
+        if (!vehicle) return;
+
+        const distance = parseFloat(document.getElementById('trip-distance').value) || 0;
+        const pickup = parseFloat(document.getElementById('trip-pickup').value) || 0;
+        const payment = parseFloat(document.getElementById('trip-payment').value) || 0;
+        const duration = parseFloat(document.getElementById('trip-duration').value) || 0;
+        const tip = parseFloat(document.getElementById('trip-tip').value) || 0;
+        const commissionRate = parseFloat(document.getElementById('trip-commission-rate').value) || 0;
+
+        const totalKm = distance + pickup;
+        const commissionCost = payment * (commissionRate / 100);
+        const fuelCost = (totalKm / vehicle.consumption_km_per_gallon) * vehicle.fuel_price_per_gallon;
+        const wearCost = totalKm * vehicle.maintenance_cost_per_km;
+        const pickupFuel = (pickup / vehicle.consumption_km_per_gallon) * vehicle.fuel_price_per_gallon;
+        const pickupWear = pickup * vehicle.maintenance_cost_per_km;
+        const pickupCost = pickupFuel + pickupWear;
+        const totalIncome = payment + tip;
+        const totalDeductions = commissionCost + fuelCost + wearCost;
+        const netProfit = totalIncome - totalDeductions;
+        const profitPerHour = duration > 0 ? (netProfit / (duration / 60)) : 0;
+        const profitPerKm = totalKm > 0 ? (netProfit / totalKm) : 0;
+        const profitPerMin = duration > 0 ? (netProfit / duration) : 0;
+        const deductionPct = totalIncome > 0 ? (totalDeductions / totalIncome * 100) : 0;
+
+        let rating, ratingClass;
+        if (profitPerKm >= 0.50) { rating = 'Excelente'; ratingClass = 'badge-green'; }
+        else if (profitPerKm >= 0.30) { rating = 'Buena'; ratingClass = 'badge-blue'; }
+        else if (profitPerKm >= 0.15) { rating = 'Regular'; ratingClass = 'badge-yellow'; }
+        else { rating = 'Mala'; ratingClass = 'badge-red'; }
+
+        const profitColor = netProfit >= 0 ? 'text-green-400' : 'text-red-400';
+
+        document.getElementById('trip-net-profit').className = `text-4xl font-bold ${profitColor}`;
+        document.getElementById('trip-net-profit').textContent = `$${netProfit.toFixed(2)}`;
+        document.getElementById('trip-per-hour').textContent = `$${profitPerHour.toFixed(2)}`;
+        document.getElementById('trip-per-km').textContent = `$${profitPerKm.toFixed(2)}`;
+        document.getElementById('trip-per-min').textContent = `$${profitPerMin.toFixed(2)}`;
+
+        const ratingEl = document.getElementById('trip-rating');
+        ratingEl.textContent = rating;
+        ratingEl.className = `badge ${ratingClass} text-sm`;
+
+        document.getElementById('detail-payment').textContent = `+$${payment.toFixed(2)}`;
+        document.getElementById('detail-commission-pct').textContent = `(${commissionRate}%)`;
+        document.getElementById('detail-commission').textContent = `-$${commissionCost.toFixed(2)}`;
+        document.getElementById('detail-fuel-calc').textContent = `(${totalKm}km ÷ ${vehicle.consumption_km_per_gallon}km/gal × $${vehicle.fuel_price_per_gallon})`;
+        document.getElementById('detail-fuel').textContent = `-$${fuelCost.toFixed(2)}`;
+        document.getElementById('detail-wear-calc').textContent = `(${totalKm}km × $${vehicle.maintenance_cost_per_km})`;
+        document.getElementById('detail-wear').textContent = `-$${wearCost.toFixed(2)}`;
+
+        const pickupRow = document.getElementById('pickup-row');
+        if (pickup > 0) {
+            pickupRow.style.display = 'flex';
+            document.getElementById('detail-pickup-calc').textContent = `(${pickup}km incluidos en Combustible + Desgaste)`;
+            document.getElementById('detail-pickup').textContent = `-$${pickupCost.toFixed(2)}`;
+        } else {
+            pickupRow.style.display = 'none';
+        }
+
+        const tipRow = document.getElementById('tip-row');
+        if (tip > 0) {
+            tipRow.style.display = 'flex';
+            document.getElementById('detail-tip').textContent = `+$${tip.toFixed(2)}`;
+        } else {
+            tipRow.style.display = 'none';
+        }
+
+        document.getElementById('detail-total-deductions').textContent = `-$${totalDeductions.toFixed(2)}`;
+        document.getElementById('deduction-bar').style.width = `${Math.min(deductionPct, 100)}%`;
+        document.getElementById('deduction-bar').className = deductionPct > 50 ? 'bg-red-500 h-2 rounded-full transition-all' : 'bg-red-400 h-2 rounded-full transition-all';
+        document.getElementById('deduction-pct-text').textContent = `${deductionPct.toFixed(1)}% en gastos operativos`;
+    }
+
+    // Dashboard
+    const commissionRatesDash = { 'InDrive': 13.79, 'Uber': 25.0, 'Taxi': 0.0, 'Didi': 20.0 };
+    let dashFilter = 'month';
+    let allSessionsCache = [];
+    let allVehiclesCache = [];
+
+    function setDashFilter(filter) {
+        dashFilter = filter;
+        document.querySelectorAll('.dash-filter').forEach(b => b.classList.remove('active-filter'));
+        document.querySelector(`[data-filter="${filter}"]`).classList.add('active-filter');
+        renderDashboard();
+    }
+
+    function filterSessionsByPeriod(sessions) {
+        const now = new Date();
+        const today = now.toISOString().slice(0, 10);
+        const weekAgo = new Date(now - 7 * 86400000).toISOString().slice(0, 10);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        return sessions.filter(s => {
+            if (dashFilter === 'all') return true;
+            if (dashFilter === 'today') return s.date === today;
+            if (dashFilter === 'week') return s.date >= weekAgo;
+            if (dashFilter === 'month') return s.date >= monthStart;
+            return true;
+        });
+    }
+
+    function calcSessionProfit(session, vehicle, commissionRates) {
+        if (!vehicle) return { fuel: 0, commission: 0, wear: 0, net: session.total_income, gallons: 0 };
+        const rate = commissionRates[session.platform] || 0;
+        const fuel = (session.km_driven / vehicle.consumption_km_per_gallon) * vehicle.fuel_price_per_gallon;
+        const commission = session.total_income * (rate / 100);
+        const wear = session.km_driven * vehicle.maintenance_cost_per_km;
+        const gallons = session.km_driven / vehicle.consumption_km_per_gallon;
+        const net = session.total_income - fuel - commission - wear;
+        return { fuel, commission, wear, net, gallons, rate };
+    }
+
+    async function loadDashboard() {
+        allVehiclesCache = await api('/vehicles');
+        allSessionsCache = await api('/sessions');
+        renderDashboard();
+    }
+
+    function renderDashboard() {
+        const statsDiv = document.getElementById('dashboard-stats');
+        const detailsDiv = document.getElementById('dashboard-details');
+        const sessions = filterSessionsByPeriod(allSessionsCache);
+        const vehicles = allVehiclesCache;
+
+        if (sessions.length === 0) {
+            statsDiv.innerHTML = '';
+            detailsDiv.innerHTML = `<div class="card text-center py-12 col-span-2"><i class="fas fa-chart-line text-gray-600 text-4xl mb-4"></i><p class="text-gray-500">No hay datos en este período</p><p class="text-gray-600 text-sm mt-1">Prueba otro filtro o registra jornadas</p></div>`;
+            return;
+        }
+
+        let totalIncome = 0, totalHours = 0, totalKm = 0, totalTrips = 0;
+        let totalFuel = 0, totalCommission = 0, totalWear = 0, totalNet = 0, totalGallons = 0;
+        const platformStats = {};
+
+        sessions.forEach(s => {
+            const v = vehicles.find(x => x.id === s.vehicle_id);
+            const p = calcSessionProfit(s, v, commissionRatesDash);
+            totalIncome += s.total_income;
+            totalHours += s.hours_worked;
+            totalKm += s.km_driven;
+            totalTrips += s.total_trips;
+            totalFuel += p.fuel;
+            totalCommission += p.commission;
+            totalWear += p.wear;
+            totalNet += p.net;
+            totalGallons += p.gallons;
+            if (!platformStats[s.platform]) platformStats[s.platform] = { income: 0, commission: 0, sessions: 0, km: 0, trips: 0, net: 0 };
+            platformStats[s.platform].income += s.total_income;
+            platformStats[s.platform].commission += p.commission;
+            platformStats[s.platform].net += p.net;
+            platformStats[s.platform].sessions += 1;
+            platformStats[s.platform].km += s.km_driven;
+            platformStats[s.platform].trips += s.total_trips;
+        });
+
+        const netPerHour = totalHours > 0 ? totalNet / totalHours : 0;
+        const netPerKm = totalKm > 0 ? totalNet / totalKm : 0;
+        const netPerTrip = totalTrips > 0 ? totalNet / totalTrips : 0;
+        const costPerKm = totalKm > 0 ? (totalFuel + totalCommission + totalWear) / totalKm : 0;
+        const grossPerHour = totalHours > 0 ? totalIncome / totalHours : 0;
+
+        const netColor = totalNet >= 0 ? 'green' : 'red';
+
+        statsDiv.innerHTML = `
+            <div class="card stat-glow stat-card border-${netColor}-500/30" onclick="showModalGanancias()">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="w-11 h-11 bg-${netColor}-500/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-wallet text-${netColor}-400 text-lg"></i>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-600 text-xs stat-arrow mt-1"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-${netColor}-400">$${totalNet.toFixed(2)}</h3>
+                <p class="text-gray-500 text-xs mt-1">Ganancia Neta</p>
+                <p class="text-gray-600 text-[11px] mt-1">Bruto: $${totalIncome.toFixed(2)} · Gastos: -$${(totalFuel + totalCommission + totalWear).toFixed(2)}</p>
+            </div>
+            <div class="card stat-card" onclick="showModalHoras()">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="w-11 h-11 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-clock text-blue-400 text-lg"></i>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-600 text-xs stat-arrow mt-1"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white">${totalHours.toFixed(1)}h</h3>
+                <p class="text-gray-500 text-xs mt-1">Horas Trabajadas</p>
+                <p class="text-gray-600 text-[11px] mt-1">Promedio: $${netPerHour.toFixed(2)}/h neto</p>
+            </div>
+            <div class="card stat-card" onclick="showModalKm()">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="w-11 h-11 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-road text-purple-400 text-lg"></i>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-600 text-xs stat-arrow mt-1"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white">${totalKm.toFixed(0)}km</h3>
+                <p class="text-gray-500 text-xs mt-1">Kilómetros Totales</p>
+                <p class="text-gray-600 text-[11px] mt-1">Costo: $${costPerKm.toFixed(2)}/km</p>
+            </div>
+            <div class="card stat-card" onclick="showModalViajes()">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="w-11 h-11 bg-orange-500/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-car text-orange-400 text-lg"></i>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-600 text-xs stat-arrow mt-1"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white">${totalTrips}</h3>
+                <p class="text-gray-500 text-xs mt-1">Total Viajes</p>
+                <p class="text-gray-600 text-[11px] mt-1">Promedio: $${netPerTrip.toFixed(2)} neto/viaje</p>
+            </div>`;
+
+        const platformColors = { 'InDrive': 'green', 'Uber': 'blue', 'Taxi': 'yellow', 'Didi': 'purple' };
+        const platformBadges = { 'InDrive': 'ID', 'Uber': 'UB', 'Taxi': 'TX', 'Didi': 'DD' };
+
+        detailsDiv.innerHTML = `
+            <div class="card">
+                <h3 class="font-semibold text-white mb-4"><i class="fas fa-chart-bar mr-2 text-accent-400"></i>Promedios</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between py-3 border-b border-dark-600">
+                        <span class="text-gray-400 text-sm">Ganancia neta/hora</span>
+                        <span class="font-semibold text-${netColor}-400">$${netPerHour.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between py-3 border-b border-dark-600">
+                        <span class="text-gray-400 text-sm">Ganancia neta/km</span>
+                        <span class="font-semibold text-${netColor}-400">$${netPerKm.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between py-3 border-b border-dark-600">
+                        <span class="text-gray-400 text-sm">Ganancia neta/viaje</span>
+                        <span class="font-semibold text-white">$${netPerTrip.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between py-3 border-b border-dark-600">
+                        <span class="text-gray-400 text-sm">Ingreso bruto/hora</span>
+                        <span class="font-semibold text-gray-300">$${grossPerHour.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between py-3 border-b border-dark-600">
+                        <span class="text-gray-400 text-sm">Galones consumidos</span>
+                        <span class="font-semibold text-white">${totalGallons.toFixed(1)} gal</span>
+                    </div>
+                    <div class="flex justify-between py-3">
+                        <span class="text-gray-400 text-sm">Sesiones</span>
+                        <span class="font-semibold text-white">${sessions.length}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="font-semibold text-white mb-4"><i class="fas fa-layer-group mr-2 text-accent-400"></i>Por Plataforma</h3>
+                <div class="space-y-3">
+                    ${Object.entries(platformStats).map(([p, d]) => {
+                        const pct = totalIncome > 0 ? (d.income / totalIncome * 100).toFixed(0) : 0;
+                        return `
+                        <div class="p-3 bg-dark-700 rounded-xl">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 bg-${platformColors[p] || 'blue'}-500/10 rounded-full flex items-center justify-center">
+                                        <span class="text-${platformColors[p] || 'blue'}-400 font-bold text-xs">${platformBadges[p] || p.substring(0,2).toUpperCase()}</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-white text-sm">${p}</p>
+                                        <p class="text-gray-500 text-xs">${d.sessions} sesiones · ${pct}% del total</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-white text-sm">$${d.income.toFixed(2)}</p>
+                                    <p class="text-red-400 text-xs">-${d.commission.toFixed(2)} comisión</p>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Neto: <span class="text-${d.net >= 0 ? 'green' : 'red'}-400 font-semibold">$${d.net.toFixed(2)}</span></span>
+                                <span>${d.km.toFixed(0)} km · ${d.trips} viajes</span>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+    }
+
+    // Modal
+    function openModal(title, bodyHtml) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').innerHTML = bodyHtml;
+        document.getElementById('app-modal').classList.add('active');
+    }
+    function closeModal() {
+        document.getElementById('app-modal').classList.remove('active');
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    function showModalGanancias() {
+        const sessions = filterSessionsByPeriod(allSessionsCache);
+        if (!sessions.length) return openModal('Ganancia Neta', '<p class="text-gray-500 text-center py-8">No hay datos en este período</p>');
+        let rows = '', maxIncome = 0;
+        sessions.forEach(s => {
+            const v = allVehiclesCache.find(x => x.id === s.vehicle_id);
+            const p = calcSessionProfit(s, v, commissionRatesDash);
+            if (s.total_income > maxIncome) maxIncome = s.total_income;
+            const netClass = p.net >= 0 ? 'text-green-400' : 'text-red-400';
+            const platformColors = { 'InDrive': 'green', 'Uber': 'blue', 'Taxi': 'yellow', 'Didi': 'purple' };
+            const pc = platformColors[s.platform] || 'blue';
+            rows += `<div class="flex items-center gap-3 py-3 border-b border-dark-600">
+                <span class="badge badge-${pc} text-[10px] w-16 text-center">${s.platform}</span>
+                <span class="text-gray-400 text-xs w-20">${formatDisplayDate(s.date)}</span>
+                <div class="flex-1 flex items-center gap-2">
+                    <div class="flex-1 h-5 bg-dark-700 rounded overflow-hidden flex">
+                        <div class="bg-blue-500/40 h-full" style="width:${maxIncome>0?(s.total_income/maxIncome*100):0}%"></div>
+                    </div>
+                    <span class="text-white text-xs w-14 text-right">$${s.total_income.toFixed(2)}</span>
+                </div>
+                <span class="text-gray-500 text-xs w-14 text-right">-${(p.fuel+p.commission+p.wear).toFixed(2)}</span>
+                <span class="font-semibold text-xs w-16 text-right ${netClass}">$${p.net.toFixed(2)}</span>
+            </div>`;
+        });
+        openModal('Historial Financiero', `
+            <div class="flex gap-4 mb-4 text-[11px] text-gray-500 px-1">
+                <span class="w-16"></span><span class="w-20">Fecha</span><span class="flex-1">Ingreso Bruto</span><span class="w-14 text-right">Gastos</span><span class="w-16 text-right">Neto</span>
+            </div>
+            ${rows}
+            <p class="text-gray-600 text-[10px] mt-3 text-center">Barras = ingreso bruto proporcional al máximo del período</p>
+        `);
+    }
+
+    function showModalHoras() {
+        const sessions = filterSessionsByPeriod(allSessionsCache);
+        if (!sessions.length) return openModal('Horas Trabajadas', '<p class="text-gray-500 text-center py-8">No hay datos en este período</p>');
+        let rows = '';
+        sessions.forEach(s => {
+            const v = allVehiclesCache.find(x => x.id === s.vehicle_id);
+            const p = calcSessionProfit(s, v, commissionRatesDash);
+            const netH = s.hours_worked > 0 ? (p.net / s.hours_worked) : 0;
+            const effColor = netH >= 3 ? 'green' : netH >= 1.5 ? 'blue' : netH >= 0 ? 'yellow' : 'red';
+            const platformColors = { 'InDrive': 'green', 'Uber': 'blue', 'Taxi': 'yellow', 'Didi': 'purple' };
+            const pc = platformColors[s.platform] || 'blue';
+            rows += `<div class="flex items-center gap-3 py-3 border-b border-dark-600">
+                <span class="badge badge-${pc} text-[10px] w-16 text-center">${s.platform}</span>
+                <span class="text-gray-400 text-xs w-20">${formatDisplayDate(s.date)}</span>
+                <span class="text-white text-xs w-12 text-center font-semibold">${s.hours_worked}h</span>
+                <div class="flex-1"></div>
+                <span class="font-semibold text-xs text-${effColor}-400">$${netH.toFixed(2)}/h</span>
+            </div>`;
+        });
+        const totalH = sessions.reduce((a,s)=>a+s.hours_worked,0);
+        const totalN = sessions.reduce((a,s)=>{const v=allVehiclesCache.find(x=>x.id===s.vehicle_id);return a+calcSessionProfit(s,v,commissionRatesDash).net;},0);
+        openModal('Desglose de Tiempo y Eficiencia', `
+            <div class="bg-dark-700 rounded-xl p-4 mb-4 flex justify-around text-center">
+                <div><p class="text-2xl font-bold text-blue-400">${totalH.toFixed(1)}h</p><p class="text-[11px] text-gray-500">Total horas</p></div>
+                <div class="w-px bg-dark-600"></div>
+                <div><p class="text-2xl font-bold text-green-400">$${totalH>0?(totalN/totalH).toFixed(2):'0.00'}</p><p class="text-[11px] text-gray-500">Promedio $/hora</p></div>
+                <div class="w-px bg-dark-600"></div>
+                <div><p class="text-2xl font-bold text-white">${sessions.length}</p><p class="text-[11px] text-gray-500">Jornadas</p></div>
+            </div>
+            <div class="flex gap-4 mb-3 text-[11px] text-gray-500 px-1">
+                <span class="w-16"></span><span class="w-20">Fecha</span><span class="w-12 text-center">Horas</span><span class="flex-1"></span><span class="text-right">Eficiencia</span>
+            </div>
+            ${rows}
+        `);
+    }
+
+    function showModalKm() {
+        const sessions = filterSessionsByPeriod(allSessionsCache);
+        if (!sessions.length) return openModal('Kilómetros Totales', '<p class="text-gray-500 text-center py-8">No hay datos en este período</p>');
+        let rows = '';
+        sessions.forEach(s => {
+            const v = allVehiclesCache.find(x => x.id === s.vehicle_id);
+            const p = calcSessionProfit(s, v, commissionRatesDash);
+            const vname = v ? `${v.brand} ${v.model}` : 'N/A';
+            const platformColors = { 'InDrive': 'green', 'Uber': 'blue', 'Taxi': 'yellow', 'Didi': 'purple' };
+            const pc = platformColors[s.platform] || 'blue';
+            rows += `<div class="flex items-center gap-3 py-3 border-b border-dark-600">
+                <span class="badge badge-${pc} text-[10px] w-16 text-center">${s.platform}</span>
+                <span class="text-gray-400 text-xs w-20">${formatDisplayDate(s.date)}</span>
+                <span class="text-white text-xs font-semibold w-14 text-center">${s.km_driven}km</span>
+                <span class="text-gray-500 text-xs flex-1 truncate">${vname}</span>
+                <div class="flex gap-3 text-[11px]">
+                    <span class="text-yellow-400">⛽ $${p.fuel.toFixed(2)}</span>
+                    <span class="text-purple-400">🔧 $${p.wear.toFixed(2)}</span>
+                </div>
+            </div>`;
+        });
+        const totalKm = sessions.reduce((a,s)=>a+s.km_driven,0);
+        const totalF = sessions.reduce((a,s)=>{const v=allVehiclesCache.find(x=>x.id===s.vehicle_id);return a+calcSessionProfit(s,v,commissionRatesDash).fuel;},0);
+        const totalW = sessions.reduce((a,s)=>{const v=allVehiclesCache.find(x=>x.id===s.vehicle_id);return a+calcSessionProfit(s,v,commissionRatesDash).wear;},0);
+        openModal('Historial de Desgaste y Recorrido', `
+            <div class="bg-dark-700 rounded-xl p-4 mb-4 flex justify-around text-center">
+                <div><p class="text-2xl font-bold text-purple-400">${totalKm.toFixed(0)}km</p><p class="text-[11px] text-gray-500">Total km</p></div>
+                <div class="w-px bg-dark-600"></div>
+                <div><p class="text-2xl font-bold text-yellow-400">$${totalF.toFixed(2)}</p><p class="text-[11px] text-gray-500">Combustible</p></div>
+                <div class="w-px bg-dark-600"></div>
+                <div><p class="text-2xl font-bold text-purple-400">$${totalW.toFixed(2)}</p><p class="text-[11px] text-gray-500">Mantenimiento</p></div>
+            </div>
+            <div class="flex gap-4 mb-3 text-[11px] text-gray-500 px-1">
+                <span class="w-16"></span><span class="w-20">Fecha</span><span class="w-14 text-center">Km</span><span class="flex-1">Vehículo</span><span class="text-right">Costos</span>
+            </div>
+            ${rows}
+        `);
+    }
+
+    function showModalViajes() {
+        const sessions = filterSessionsByPeriod(allSessionsCache);
+        if (!sessions.length) return openModal('Total de Viajes', '<p class="text-gray-500 text-center py-8">No hay datos en este período</p>');
+
+        const totalTrips = sessions.reduce((a, s) => a + (s.total_trips || 0), 0);
+        const totalKm = sessions.reduce((a, s) => a + (s.km_driven || 0), 0);
+
+        let rows = '';
+        sessions.forEach(s => {
+            const v = allVehiclesCache.find(x => x.id === s.vehicle_id);
+            const p = calcSessionProfit(s, v, commissionRatesDash);
+            const trips = s.total_trips || 0;
+            const avgNet = trips > 0 ? p.net / trips : 0;
+            const avgKm = trips > 0 ? (s.km_driven || 0) / trips : 0;
+            const platformColors = { 'InDrive': 'green', 'Uber': 'blue', 'Taxi': 'yellow', 'Didi': 'purple' };
+            const pc = platformColors[s.platform] || 'blue';
+            rows += `<div class="flex items-center gap-3 py-3 border-b border-dark-600">
+                <span class="text-gray-400 text-xs w-20">${formatDisplayDate(s.date)}</span>
+                <span class="badge badge-${pc} text-[10px] w-16 text-center">${s.platform}</span>
+                <span class="text-white text-xs font-bold w-10 text-center">${trips}</span>
+                <span class="font-semibold text-xs flex-1 text-right text-green-400">$${avgNet.toFixed(2)}</span>
+                <span class="text-gray-400 text-xs w-16 text-right">${avgKm.toFixed(1)} km</span>
+            </div>`;
+        });
+
+        openModal('Total de Viajes', `
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-5">
+                <div class="flex items-start gap-3">
+                    <span class="text-xl mt-0.5">🚗</span>
+                    <div class="flex-1">
+                        <p class="text-white text-sm font-semibold mb-1">Resumen de Viajes por Jornadas</p>
+                        <p class="text-gray-400 text-[11px] leading-relaxed">Los viajes del Dashboard se calculan a partir de tus jornadas registradas. El Analizador de Viajes funciona en tiempo real sin guardar datos para darte la máxima velocidad en calle.</p>
+                    </div>
+                </div>
+                <button onclick="closeModal(); showPage('trips')" class="mt-3 w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-bolt"></i> Probar Analizador de Viajes
+                </button>
+            </div>
+
+            <div class="flex gap-4 mb-3 text-[11px] text-gray-500 px-1">
+                <span class="w-20">Fecha</span><span class="w-16 text-center">Plataforma</span><span class="w-10 text-center">Viajes</span><span class="flex-1 text-right">Promed. Neto/Viaje</span><span class="w-16 text-right">Promed. Km/Viaje</span>
+            </div>
+            ${rows}
+
+            <div class="mt-5 bg-dark-700 rounded-xl p-3 flex items-start gap-2">
+                <i class="fas fa-lightbulb text-yellow-400 text-xs mt-0.5"></i>
+                <p class="text-gray-500 text-[11px] leading-relaxed">Próximamente: Opción para guardar y auditoriar el historial de carreras individuales calculadas.</p>
+            </div>
+        `);
+    }
+
+    function toggleSidebar() {
+        const sb = document.querySelector('aside');
+        const ov = document.getElementById('sidebar-overlay');
+        sb.classList.toggle('sidebar-open');
+        ov.classList.toggle('active');
+    }
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    // Init
+    showPage('home');
+    </script>
 </body>
 </html>

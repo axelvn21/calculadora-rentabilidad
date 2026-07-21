@@ -33,6 +33,10 @@ jobs:
           rm -rf www
           mkdir www
           cp -r backend/static/* www/
+          echo "=== www/ contents ==="
+          ls -la www/
+          echo "=== Verifying db.js ==="
+          head -1 www/db.js
 
       - name: Add Android platform
         run: npx cap add android
