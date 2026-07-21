@@ -34,10 +34,6 @@ jobs:
           mkdir www
           cp -r backend/static/* www/
 
-      - name: Init Capacitor
-        run: |
-          npx cap init "Calculadora Rentabilidad" "com.axelvn.calculadora" --web-dir www
-
       - name: Add Android platform
         run: npx cap add android
 
